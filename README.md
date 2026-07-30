@@ -2,7 +2,10 @@
 
 A compact, low-cost electronic signal generator prototype designed around the RP2040 microcontroller. This project demonstrates high-speed digital-to-analog conversion using Programmable I/O (PIO) state machines, an R-2R resistor-ladder DAC network, and a menu-driven 16x2 LCD interface.
 
-![Hardware Prototype Build](media/prototype_photo.jpeg)
+<div align="center">
+  <img src="media/prototype_photo.jpeg" width="700" alt="Hardware Prototype Build">
+  <br><em>Hardware Prototype Build</em>
+</div>
 
 ---
 
@@ -10,7 +13,19 @@ A compact, low-cost electronic signal generator prototype designed around the RP
 
 Commercial arbitrary waveform generators often cost hundreds of dollars. This engineering prototype explores building a versatile desk instrument capable of producing analog waveforms for circuit testing, frequency-response analysis, and general laboratory experiment use.
 
-### Core System Features
+<div align="center">
+  <img src="media/Clean overview photo.png" width="650" alt="Clean overview of the assembled prototype">
+  <br><em>Clean overview of the assembled prototype</em>
+</div>
+
+---
+
+## ✨ Core System Features
+
+<div align="center">
+  <img src="media/Features.png" width="650" alt="Core system features overview">
+</div>
+
 - **Multi-Waveform Signal Synthesis:** Support for 9 standard waveform geometries (Sine, Square, Pulse, Triangle, Sinc, Gaussian, Exponential, Noise, DC).
 - **Dual-Mode Generation Architecture:**
   - High-Speed Pulse/Square Generation via RP2040 PIO state machines.
@@ -20,9 +35,25 @@ Commercial arbitrary waveform generators often cost hundreds of dollars. This en
 
 ---
 
+## 🖥️ On-Device User Interface
+
+The instrument provides live visual feedback through a 16x2 character LCD, driven via a PCF8574 I2C adapter. Four tactile push-buttons handle menu navigation (UP, DOWN, OK/Menu, BACK), waveform selection, and frequency stepping.
+
+<div align="center">
+  <img src="media/Screen.png" width="600" alt="LCD screen showing the on-device menu interface">
+  <br><em>16x2 LCD menu interface showing waveform and frequency parameters</em>
+</div>
+
+---
+
 ## 📐 System Architecture
 
 The instrument separates digital control logic, high-speed waveform execution, and analog signal reconstruction into modular functional blocks:
+
+<div align="center">
+  <img src="media/Block diagram 1.png" width="720" alt="System block diagram">
+  <br><em>System block diagram</em>
+</div>
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
@@ -80,17 +111,22 @@ The instrument separates digital control logic, high-speed waveform execution, a
 
 ---
 
-## 🧪 Testing & Signal Validation Status
+## 🧪 Testing & Signal Validation
 
-> 🛠️ **Documentation in Progress**  
-> Empirical oscilloscope captures, output signal linearity measurements, and harmonic distortion audits are currently being compiled for future publication.
+<div align="center">
+  <img src="media/Real test 2.png" width="650" alt="Live oscilloscope test capture">
+  <br><em>Live signal validation on a digital storage oscilloscope</em>
+</div>
+
+Empirical oscilloscope captures and per-waveform validation results are compiled in the **[Complete AWG Waveform Validation Report](media/Test%20Result/Complete_AWG_Waveform_Validation_Report.pdf)**. Individual capture results for each waveform geometry are available in the [`media/Test Result/`](media/Test%20Result) folder.
+
+> 🛠️ **Documentation in Progress** — Output linearity measurements and harmonic distortion audits are being compiled for future publication.
 
 ---
 
 ## 🎬 Demonstration Media
 
-> 📹 **Demo Video Coming Soon**  
-> Video clips showing live menu navigation, waveform switching, and frequency adjustments on a digital storage oscilloscope will be added in a future showcase update.
+> 📹 **Demo Video Coming Soon** — Video clips showing live menu navigation, waveform switching, and frequency adjustments on a digital storage oscilloscope will be added in a future showcase update.
 
 ---
 
@@ -104,6 +140,23 @@ The instrument separates digital control logic, high-speed waveform execution, a
 - **Active Output Buffer:** Addition of an operational amplifier buffer stage to lower output impedance and prevent signal sagging under load.
 - **Variable Amplitude & Offset Control:** Hardware-based digital potentiometer integration for adjustable gain and DC offset adjustment.
 - **PCB Fabrication:** Transitioning from breadboard prototyping to a custom 2-layer printed circuit board enclosure.
+
+---
+
+## 🔧 Applications
+
+<div align="center">
+  <img src="media/It's applications.png" width="650" alt="Example applications of the AWG">
+  <br><em>Typical applications of an arbitrary waveform generator</em>
+</div>
+
+This instrument is suitable for a range of bench and educational use cases, including:
+
+- **Circuit & amplifier testing** — characterizing frequency response and transient behavior.
+- **Sensor & transducer simulation** — emulating real-world signal sources.
+- **Frequency-response analysis** — driving filters and resonant networks across a swept band.
+- **Educational demonstrations** — visualizing waveform mathematics and signal theory.
+- **Embedded system stimulus** — providing clock, pulse, and reference signals for development and debug.
 
 ---
 
