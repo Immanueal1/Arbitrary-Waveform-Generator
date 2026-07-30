@@ -1,0 +1,11 @@
+# System & OS temporary files
+Thumbs.db
+Desktop.ini
+
+# IDE & Editor folders
+.vscode/
+.idea/
+
+# Scratch & temporary build artifacts
+*.tmp
+*.log
