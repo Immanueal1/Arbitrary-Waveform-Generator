@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+title: "Raspberry Pi Pico Arbitrary Waveform Generator"
+message: "If you reference or use this engineering showcase project in academic, technical, or portfolio research, please cite it using these metadata."
+type: software
+authors:
+  - name: "Embedded Engineering Portfolio Contributor"
+version: "1.2.0"
+date-released: "2026-08-02"
+repository-code: "https://github.com/user/arbitrary-waveform-generator"
+keywords:
+  - "embedded-systems"
+  - "rp2040"
+  - "raspberry-pi-pico"
+  - "pio"
+  - "r2r-dac"
+  - "waveform-generator"
+  - "micropython"

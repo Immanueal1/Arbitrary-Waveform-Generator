@@ -1,0 +1,13 @@
+Raspberry Pi Pico Arbitrary Waveform Generator Showcase
+Copyright (c) 2026. All Rights Reserved.
+
+This repository is an engineering portfolio project documenting digital-to-analog
+signal generation using the Raspberry Pi Pico (RP2040) microcontroller.
+
+Third-Party Acknowledgments & Component References:
+- Raspberry Pi, RP2040, and Raspberry Pi Pico are trademarks of Raspberry Pi Ltd.
+- MicroPython runtime is copyright (c) Damien P. George.
+- HD44780 LCD and PCF8574 I2C adapter specifications reference standard electronic component datasheets.
+
+Additional third-party notices and open-source licenses will be added if applicable
+in future software or hardware revisions.
