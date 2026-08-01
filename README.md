@@ -1,97 +1,203 @@
 # Raspberry Pi Pico Arbitrary Waveform Generator (AWG)
 
-A compact, low-cost electronic signal generator prototype designed around the RP2040 microcontroller. This project demonstrates high-speed digital-to-analog conversion using Programmable I/O (PIO) state machines, an R-2R resistor-ladder DAC network, and a menu-driven 16x2 LCD interface.
-
 <div align="center">
-  <img src="media/prototype_photo.jpeg" width="700" alt="Hardware Prototype Build">
-  <br><em>Hardware Prototype Build</em>
+
+  ![Microcontroller](https://img.shields.io/badge/MCU-RP2040%20Dual--Core%20ARM%20Cortex--M0%2B-blue?style=for-the-badge&logo=raspberrypi)
+  ![Firmware](https://img.shields.io/badge/Firmware-MicroPython%20%2B%20PIO-green?style=for-the-badge&logo=python)
+  ![DAC Architecture](https://img.shields.io/badge/DAC-11--Bit%20R--2R%20Resistor%20Ladder-orange?style=for-the-badge)
+  ![Waveforms](https://img.shields.io/badge/Waveforms-9%20Synthesized%20Geometries-purple?style=for-the-badge)
+  ![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red?style=for-the-badge)
+
+  <br>
+
+  <h3>A High-Performance, Low-Cost Dual-Core Embedded Signal Generator Demonstrating RP2040 Hardware PIO State Machines, Multi-Bit R-2R Resistor Ladder DAC Synthesis, and Event-Driven LCD User Interfaces.</h3>
+
+  <br>
+
+  <img src="media/prototype_photo.jpeg" width="800" alt="Raspberry Pi Pico Arbitrary Waveform Generator Prototype Build">
+  <br>
+  <sub><b>Figure 1:</b> Assembled hardware prototype on bench setup showing Raspberry Pi Pico (RP2040), 16x2 I2C LCD, tactile buttons, and 11-bit R-2R DAC array.</sub>
+
 </div>
 
 ---
 
-## 📌 Project Overview
-
-Commercial arbitrary waveform generators often cost hundreds of dollars. This engineering prototype explores building a versatile desk instrument capable of producing analog waveforms for circuit testing, frequency-response analysis, and general laboratory experiment use.
-
-<div align="center">
-  <img src="media/Clean overview photo.png" width="650" alt="Clean overview of the assembled prototype">
-  <br><em>Clean overview of the assembled prototype</em>
-</div>
-
----
-
-## ✨ Core System Features
-
-<div align="center">
-  <img src="media/Features.png" width="650" alt="Core system features overview">
-</div>
-
-- **Multi-Waveform Signal Synthesis:** Support for 9 standard waveform geometries (Sine, Square, Pulse, Triangle, Sinc, Gaussian, Exponential, Noise, DC).
-- **Dual-Mode Generation Architecture:**
-  - High-Speed Pulse/Square Generation via RP2040 PIO state machines.
-  - Multi-Bit Analog Waveform Streaming via R-2R resistor-ladder DAC.
-- **On-Device User Interface:** 16x2 character LCD display showing real-time waveform selection, frequency settings, and menu parameters.
-- **Tactile Button Control:** Dedicated push-buttons for menu navigation, frequency adjustment, and parameter stepping.
+## 📋 Table of Contents
+- [Executive Summary](#-executive-summary)
+- [System Architecture](#-system-architecture)
+- [Key Features](#-key-features)
+- [Hardware Architecture & Electronics](#-hardware-architecture--electronics)
+  - [GPIO Allocation Table](#gpio-allocation-table)
+  - [R-2R DAC Circuit Theory](#r-2r-dac-circuit-theory)
+  - [Bill of Materials (BOM)](#bill-of-materials-bom)
+- [Firmware & Software Architecture](#-firmware--software-architecture)
+  - [Dual-Mode Signal Generation Pipeline](#dual-mode-signal-generation-pipeline)
+  - [On-Device User Interface](#on-device-user-interface)
+- [Testing & Signal Validation](#-testing--signal-validation)
+- [Engineering Lessons & Architectural Insights](#-engineering-lessons--architectural-insights)
+- [Applications](#-applications)
+- [Future System Roadmap](#-future-system-roadmap)
+- [Repository Structure Overview](#-repository-structure-overview)
+- [Showcase License & Rights Statement](#-showcase-license--rights-statement)
 
 ---
 
-## 🖥️ On-Device User Interface
+## 📌 Executive Summary
 
-The instrument provides live visual feedback through a 16x2 character LCD, driven via a PCF8574 I2C adapter. Four tactile push-buttons handle menu navigation (UP, DOWN, OK/Menu, BACK), waveform selection, and frequency stepping.
+Commercial arbitrary waveform generators (AWGs) typically range from hundreds to thousands of dollars. This engineering project explores building a versatile, desk-friendly signal generator around the **Raspberry Pi Pico (RP2040)** microcontroller for sub-$15. 
+
+The instrument combines **hardware-accelerated Programmable I/O (PIO)** for high-frequency clock/pulse generation with a **11-bit parallel R-2R resistor-ladder DAC** for multi-bit arbitrary analog waveform streaming. User control is provided via an event-driven 16x2 LCD interface and debounced tactile navigation push-buttons.
 
 <div align="center">
-  <img src="media/Screen.png" width="600" alt="LCD screen showing the on-device menu interface">
-  <br><em>16x2 LCD menu interface showing waveform and frequency parameters</em>
+  <img src="media/Clean%20overview%20photo.png" width="750" alt="Clean overview of assembled AWG prototype">
+  <br>
+  <sub><b>Figure 2:</b> Bench overview of the assembled functional prototype.</sub>
 </div>
 
 ---
 
 ## 📐 System Architecture
 
-The instrument separates digital control logic, high-speed waveform execution, and analog signal reconstruction into modular functional blocks:
+The AWG system separates digital control logic, high-speed waveform synthesis execution, and analog signal reconstruction into decoupled functional layers:
 
 <div align="center">
-  <img src="media/Block diagram 1.png" width="720" alt="System block diagram">
-  <br><em>System block diagram</em>
+  <img src="media/Block%20diagram%201.png" width="820" alt="System Block Diagram">
+  <br>
+  <sub><b>Figure 3:</b> High-level hardware and firmware block diagram.</sub>
 </div>
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│                     USER INTERFACE LAYER                    │
-│   [ Tactile Buttons ]   ──►   [ 16x2 Character LCD ]        │
-│   (Menu Nav / Freq)           (I2C Display Adapter)         │
-└──────────────────────────────┬──────────────────────────────┘
-                               │
-                               ▼
-┌─────────────────────────────────────────────────────────────┐
-│                  EMBEDDED CONTROLLER (RP2040)               │
-│   - System Control Loop & Menu State Machine                │
-│   - PIO State Machine (High-Speed Pulse / Clock Output)     │
-│   - Multi-Bit Waveform Lookup Tables                        │
-└──────────────────────────────┬──────────────────────────────┘
-                               │
-                               ▼
-┌─────────────────────────────────────────────────────────────┐
-│                 ANALOG OUTPUT CONDITIONING                  │
-│   [ GPIO Digital Lines ] ──► [ R-2R Ladder Network ]        │
-│                                      │                      │
-│                                      ▼                      │
-│                             [ Signal Output BNC/Terminal ]  │
-└──────────────────────────────┬──────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            USER INTERFACE LAYER                             │
+│   [ 4x Tactile Push Buttons ]  ────────►  [ 16x2 Character LCD Display ]    │
+│   (UP / DOWN / OK / BACK)                 (PCF8574 I2C Adapter @ 0x27)      │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       │ Event-Driven State Navigation
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    RP2040 DUAL-CORE MICROCONTROLLER                         │
+│   ┌───────────────────────────────────┬─────────────────────────────────┐   │
+│   │ Core 0: Control Loop & UI Engine  │ Core 1: DAC Streaming / Timer   │   │
+│   └───────────────────────────────────┴─────────────────────────────────┘   │
+│   ┌─────────────────────────────────────────────────────────────────────┐   │
+│   │ PIO State Machine 0: High-Speed Square Wave & Pulse Synthesizer     │   │
+│   └─────────────────────────────────────────────────────────────────────┘   │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       │ Parallel 11-Bit Digital Bus (GP0-GP10)
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     ANALOG OUTPUT CONDITIONING                              │
+│   [ Parallel GPIO Bus (GP0-10) ] ───► [ 11-Bit R-2R Resistor Ladder DAC ]   │
+│                                                   │                         │
+│                                                   ▼                         │
+│                                      [ Analog Output Terminal / BNC ]       │
+└──────────────────────────────────────┬──────────────────────────────────────┘
 ```
 
 ---
 
-## 📑 Hardware Components & Bill of Materials (BOM)
+## ✨ Key Features
 
-| Component Category | Description | Primary Role |
-|:---|:---|:---|
-| **Microcontroller** | Raspberry Pi Pico (RP2040) | Core processor, PIO signal engine, UI menu logic |
-| **Display** | 16x2 HD44780 LCD with PCF8574 I2C Adapter | Visual parameter feedback (Waveform, Frequency, Step) |
-| **User Input** | 4x Momentary Push Buttons | Navigation (UP, DOWN, OK/Menu, BACK) |
-| **DAC Array** | Precision Resistor Ladder Network (R-2R Configuration) | Digital-to-Analog voltage synthesis |
-| **Signal Output** | BNC Connector / Output Terminal Post | Interface to oscilloscopes and test circuits |
-| **Power Supply** | USB 5V Bus Power | System power source |
+<div align="center">
+  <img src="media/Features.png" width="750" alt="Core System Features Overview">
+  <br>
+  <sub><b>Figure 4:</b> Core system features and functional highlights.</sub>
+</div>
+
+- **9 Synthesized Waveform Geometries:** Supports Sine, Square, Pulse, Triangle, Sinc, Gaussian, Exponential, Noise, and DC output.
+- **Dual-Mode Signal Generation Engine:**
+  - *PIO State Machine Mode:* High-speed pulse/square generation offloaded entirely to RP2040 PIO state machines.
+  - *Timer DMA/CPU Mode:* Multi-bit arbitrary analog signal streaming via lookup tables feeding the parallel DAC.
+- **On-Device Parameter Control:** Real-time adjustment of waveform geometry, output frequency, step resolution, amplitude scaling, DC offset, phase inversion, and pulse rise/fall times.
+- **Menu-Driven Character LCD:** 16x2 LCD visual feedback powered by an I2C expander for minimal GPIO pin footprint.
+- **Debounced Tactile Navigation:** 4-button menu state machine handling navigation (`UP`, `DOWN`, `OK/Menu`, `BACK`).
+
+---
+
+## ⚡ Hardware Architecture & Electronics
+
+### GPIO Allocation Table
+
+The RP2040 GPIO pins are allocated to maximize hardware parallel bus throughput for the DAC while minimizing pin count for the UI:
+
+| Pin Range | Peripheral Interface | Signal Type | Function / Description |
+|:---|:---|:---|:---|
+| **GP0 – GP10** | 11-Bit R-2R DAC Array | Parallel Digital Out | Bit 0 (LSB) through Bit 10 (MSB) binary-weighted outputs |
+| **GP18** | Push Button 1 (`UP`) | Digital Input (Pull-Up) | Increment frequency / parameter menu item |
+| **GP19** | Push Button 2 (`OK/MENU`) | Digital Input (Pull-Up) | Confirm selection / cycle edit parameter |
+| **GP20** | Push Button 3 (`DOWN`) | Digital Input (Pull-Up) | Decrement frequency / parameter menu item |
+| **GP21** | Push Button 4 (`BACK`) | Digital Input (Pull-Up) | Return to main menu / cancel parameter edit |
+| **GP26** | I2C0 SDA | Open-Drain / Digital | Serial Data line for 16x2 LCD PCF8574 expander |
+| **GP27** | I2C0 SCL | Open-Drain / Digital | Serial Clock line for 16x2 LCD PCF8574 expander |
+
+---
+
+### R-2R DAC Circuit Theory
+
+The analog signal synthesis relies on an **11-bit R-2R resistor ladder DAC**. The circuit converts parallel digital GPIO logic levels ($V_{DD} = 3.3\text{V}$) into discrete analog voltage levels according to the ideal binary-weighted transfer function:
+
+$$V_{\text{out}} = V_{\text{ref}} \times \sum_{i=0}^{10} \left( D_i \times 2^{i-11} \right) = V_{\text{ref}} \times \frac{\text{DAC}_{10}}{2048}$$
+
+Where:
+- $V_{\text{ref}} = 3.3\text{V}$ (Pico GPIO output voltage)
+- $D_i \in \{0, 1\}$ represents the digital logic state of GPIO pin $i$
+- $\text{DAC}_{10} \in [0, 2047]$ is the 11-bit integer value driven onto `GP0`–`GP10`
+
+---
+
+### Bill of Materials (BOM)
+
+| Component | Quantity | Form Factor | Primary Engineering Role |
+|:---|:---:|:---:|:---|
+| **Raspberry Pi Pico** | 1 | Module (DIP-40) | Dual-core ARM Cortex-M0+ microcontroller @ 133 MHz |
+| **16x2 Character LCD** | 1 | HD44780 | Main user interface display screen |
+| **PCF8574 I2C Expander** | 1 | Backpack Board | Converts parallel LCD interface to 2-wire I2C (`0x27`) |
+| **1kΩ Resistors** | 22 | Through-Hole (1/4W) | R-2R resistor ladder DAC array ($R = 1\text{k}\Omega, 2R = 2\text{k}\Omega$) |
+| **Tactile Push Buttons** | 4 | 6mm Momentary | Menu navigation input switches |
+| **BNC / Terminal Posts** | 1 | Terminal Post | Analog waveform output connection |
+| **Breadboard / Wire** | 1 | Prototyping Board | Hardware prototyping interconnect bus |
+
+---
+
+## 💻 Firmware & Software Architecture
+
+### Dual-Mode Signal Generation Pipeline
+
+The firmware utilizes a dual-path execution pipeline to balance high-frequency digital clock output with multi-bit arbitrary analog synthesis:
+
+```text
+                        ┌────────────────────────┐
+                        │   Waveform Selection   │
+                        └───────────┬────────────┘
+                                    │
+                    ┌───────────────┴───────────────┐
+                    ▼                               ▼
+       [ Square / Pulse Mode ]           [ Arbitrary Analog Mode ]
+                    │                               │
+                    ▼                               ▼
+      ┌───────────────────────────┐   ┌───────────────────────────┐
+      │ RP2040 PIO State Machine  │   │ 256-Sample Lookup Tables  │
+      │ Hardware Pulse Generator  │   │ (Sine, Sinc, Gaussian...) │
+      └─────────────┬─────────────┘   └─────────────┬─────────────┘
+                    │                               │
+                    ▼                               ▼
+       [ High-Frequency Clock ]         [ Parallel Bus Stream (GP0-10) ]
+                    │                               │
+                    ▼                               ▼
+         [ Output Terminal ]             [ 11-Bit R-2R DAC Ladder ]
+```
+
+---
+
+### On-Device User Interface
+
+Visual parameter management is executed via the 16x2 character LCD and a 4-button debounced menu state machine:
+
+<div align="center">
+  <img src="media/Screen.png" width="700" alt="16x2 LCD Menu Interface Screen">
+  <br>
+  <sub><b>Figure 5:</b> On-device 16x2 LCD screen showing waveform geometry and active frequency parameters.</sub>
+</div>
 
 ---
 
@@ -99,67 +205,84 @@ The instrument separates digital control logic, high-speed waveform execution, a
 
 > ℹ️ **Design Target Notice:** Specifications listed below represent architectural design targets established during hardware modeling and prototyping.
 
-| Specification | Parameter Target | Status / Notes |
+| Technical Parameter | Target Specification | Implementation Notes |
 |:---|:---|:---|
-| **Microcontroller Core** | Dual-core ARM Cortex-M0+ @ 133 MHz | RP2040 Silicon |
-| **Waveform Output Types** | 9 Geometries | Sine, Square, Pulse, Triangle, Sinc, Gaussian, Exp, Noise, DC |
-| **Target Frequency (Square Wave)** | 1 Hz to 10 MHz | High-speed clock/pulse output generated via RP2040 PIO state machine |
-| **Target Frequency (Arbitrary Waves)** | ~1 Hz – 300 Hz (estimated, hardware-unverified) | CPU/Timer-paced sample table streaming via R-2R DAC network |
-| **Digital-to-Analog Resolution** | Multi-Bit R-2R Ladder Network | Parallel GPIO array |
-| **Display Refresh Rate** | ~10 Hz Parameter Updates | Event-driven UI update loop |
-| **Operating Voltage** | 3.3V Logic / 5V Bus | Standard USB supply |
+| **Microcontroller Silicon** | RP2040 (Dual ARM Cortex-M0+ @ 133 MHz) | Raspberry Pi Foundation Silicon |
+| **Waveform Geometries** | 9 Types | Sine, Square, Pulse, Triangle, Sinc, Gaussian, Exp, Noise, DC |
+| **Target Frequency (Square Wave)** | 1 Hz to 10 MHz | High-speed clock generation via RP2040 PIO State Machine |
+| **Target Frequency (Arbitrary Waves)** | ~1 Hz – 300 Hz *(Estimated, unverified)* | CPU/Timer-paced sample table streaming via R-2R DAC |
+| **Digital-to-Analog Resolution** | 11-Bit Parallel DAC ($2^{11} = 2048$ steps) | R-2R Resistor Ladder Network across `GP0`–`GP10` |
+| **User Interface Display** | 16x2 Character LCD via I2C (`0x27`) | Event-driven UI update loop (~10 Hz update rate) |
+| **System Power Input** | USB 5V Bus Power | Regulated to 3.3V on Pico board |
 
 ---
 
 ## 🧪 Testing & Signal Validation
 
 <div align="center">
-  <img src="media/Real test 2.png" width="650" alt="Live oscilloscope test capture">
-  <br><em>Live signal validation on a digital storage oscilloscope</em>
+  <img src="media/Real%20test%202.png" width="650" alt="Oscilloscope Signal Validation Capture">
+  <br>
+  <sub><b>Figure 6:</b> Live signal output validation on a Digital Storage Oscilloscope (DSO).</sub>
 </div>
 
-Empirical oscilloscope captures and per-waveform validation results are compiled in the **[Complete AWG Waveform Validation Report](media/Test%20Result/Complete_AWG_Waveform_Validation_Report.pdf)**. Individual capture results for each waveform geometry are available in the [`media/Test Result/`](media/Test%20Result) folder.
+Empirical oscilloscope captures, per-waveform validation records, and measurement notes are compiled in the **[Complete AWG Waveform Validation Report](Test%20Result/Complete_AWG_Waveform_Validation_Report.pdf)**. The raw validation documents are stored within the [`Test Result/`](Test%20Result) folder.
 
-> 🛠️ **Documentation in Progress** — Output linearity measurements and harmonic distortion audits are being compiled for future publication.
-
----
-
-## 🎬 Demonstration Media
-
-> 📹 **Demo Video Coming Soon** — Video clips showing live menu navigation, waveform switching, and frequency adjustments on a digital storage oscilloscope will be added in a future showcase update.
+> 🛠️ **Documentation Status Note:** Output linearity, total harmonic distortion (THD), and Signal-to-Noise Ratio (SNR) audits are currently being compiled for future publication.
 
 ---
 
-## 💡 Architectural Lessons & Future Enhancements
+## 💡 Engineering Lessons & Architectural Insights
 
-### Key Architectural Insights
-1. **Offloading Timing to PIO:** Relying on standard CPU execution loops for high-frequency signal generation causes output jitter during display updates. Offloading clock and pulse synthesis to dedicated RP2040 PIO state machines guarantees stable signal timing.
-2. **R-2R Ladder Topology Requirements:** Accurate binary-weighted digital-to-analog conversion requires strict 1:2 resistor value ratioing (R and 2R values, such as 1kΩ and 2kΩ). Using identical resistor values across all branches distorts output voltage steps regardless of component precision.
-
-### Planned System Roadmap
-- **Active Output Buffer:** Addition of an operational amplifier buffer stage to lower output impedance and prevent signal sagging under load.
-- **Variable Amplitude & Offset Control:** Hardware-based digital potentiometer integration for adjustable gain and DC offset adjustment.
-- **PCB Fabrication:** Transitioning from breadboard prototyping to a custom 2-layer printed circuit board enclosure.
+1. **Offloading Timing to PIO:** Executing high-frequency clock generation inside standard CPU software loops causes output timing jitter whenever display update interrupts fire. Offloading pulse synthesis to dedicated RP2040 PIO state machines guarantees jitter-free signal timing regardless of main CPU load.
+2. **R-2R Ladder Topology Requirements:** Binary-weighted digital-to-analog conversion requires strict 1:2 resistor value ratioing ($R$ and $2R$ values, such as $1\text{k}\Omega$ and $2\text{k}\Omega$). Using identical resistor values across all branches distorts voltage output steps regardless of resistor precision tolerances.
 
 ---
 
 ## 🔧 Applications
 
 <div align="center">
-  <img src="media/It's applications.png" width="650" alt="Example applications of the AWG">
-  <br><em>Typical applications of an arbitrary waveform generator</em>
+  <img src="media/It%27s%20applications.png" width="750" alt="Example Applications of the AWG">
+  <br>
+  <sub><b>Figure 7:</b> Bench and educational use cases for an arbitrary waveform generator.</sub>
 </div>
 
-This instrument is suitable for a range of bench and educational use cases, including:
-
-- **Circuit & amplifier testing** — characterizing frequency response and transient behavior.
-- **Sensor & transducer simulation** — emulating real-world signal sources.
-- **Frequency-response analysis** — driving filters and resonant networks across a swept band.
-- **Educational demonstrations** — visualizing waveform mathematics and signal theory.
-- **Embedded system stimulus** — providing clock, pulse, and reference signals for development and debug.
+This instrument is designed for a range of bench testing, embedded development, and laboratory applications:
+- **Analog Circuit & Filter Testing:** Characterizing frequency response, gain, and transient response.
+- **Sensor & Transducer Emulation:** Simulating real-world sensor outputs for control system validation.
+- **Educational Demonstrations:** Visualizing waveform mathematics, Fourier synthesis, and signal theory.
+- **Embedded System Stimulus:** Supplying external clock, reference, and pulse signals during hardware debugging.
 
 ---
 
-## 📄 License & Rights Statement
+## 🚀 Future System Roadmap
 
-This repository is published solely for demonstration, architectural review, and portfolio evaluation purposes. All rights reserved. Refer to the [LICENSE](LICENSE) file for complete terms.
+- [ ] **Active Op-Amp Output Buffer:** Adding an operational amplifier buffer stage to lower output impedance and prevent signal attenuation under load.
+- [ ] **Adjustable Gain & Offset Stage:** Integrating digital potentiometers for variable peak-to-peak amplitude and DC offset tuning.
+- [ ] **Custom 2-Layer PCB Enclosure:** Transitioning from breadboard prototyping to a custom PCB and desktop instrument enclosure.
+
+---
+
+## 📁 Repository Structure Overview
+
+```text
+Arbitrary Waveform Generator - Public Showcase/
+├── README.md                            # Primary engineering showcase documentation
+├── LICENSE                              # Showcase rights statement
+├── .gitignore                           # Public git ignore rules
+├── media/                               # Image & graphic visual assets
+│   ├── prototype_photo.jpeg             # Bench hardware prototype photo
+│   ├── Clean overview photo.png         # Assembled build overview graphic
+│   ├── Features.png                     # Core feature highlight banner
+│   ├── Block diagram 1.png              # System block diagram graphic
+│   ├── Screen.png                       # 16x2 LCD UI menu screenshot
+│   ├── Real test 2.png                  # Oscilloscope validation capture
+│   └── It's applications.png            # Applications overview visual card
+└── Test Result/                         # Technical validation documents
+    └── Complete_AWG_Waveform_Validation_Report.pdf  # 37-page waveform validation report
+```
+
+---
+
+## 📄 Showcase License & Rights Statement
+
+This public showcase repository is published strictly for demonstration, architectural review, and engineering portfolio evaluation purposes. All rights reserved. Refer to the [LICENSE](LICENSE) file for complete details.
